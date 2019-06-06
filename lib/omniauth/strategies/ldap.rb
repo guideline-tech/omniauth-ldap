@@ -13,6 +13,7 @@ module OmniAuth
         'mobile' => ['mobile', 'mobileTelephoneNumber'],
         'nickname' => ['uid', 'userid', 'sAMAccountName'],
         'title' => 'title',
+        'groups' => 'memberOf',
         'location' => {"%0, %1, %2, %3 %4" => [['address', 'postalAddress', 'homePostalAddress', 'street', 'streetAddress'], ['l'], ['st'],['co'],['postOfficeBox']]},
         'uid' => 'dn',
         'url' => ['wwwhomepage'],
@@ -70,6 +71,17 @@ module OmniAuth
       def self.map_user(mapper, object)
         user = {}
         mapper.each do |key, value|
+          if key == 'groups'
+            if object.respond_to? value.downcase.to_sym
+              groups = []
+              object[value.downcase.to_sym].each do |g|
+                group_match = /=\s*([^,]*)\s*,/.match(g)
+                groups << group_match.captures.first if group_match
+              end
+              user[key] = groups if groups.size > 0
+            end
+            next
+          end
           case value
           when String
             user[key] = object[value.downcase.to_sym].first if object.respond_to? value.downcase.to_sym
